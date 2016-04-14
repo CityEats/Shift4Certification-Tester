@@ -1,0 +1,150 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - My ASP.NET Application</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/jquery")
+    <script src="https://i4m.i4go.com/js/jquery.i4goTrueToken.js" type="text/javascript"></script>
+    <script src="https://i4m.i4go.com/js/jquery.cardswipe.js" type="text/javascript"></script>
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                @Html.ActionLink("Application name", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
+                    <li>@Html.ActionLink("About", "About", "Home")</li>
+                    <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
+                </ul>
+                @Html.Partial("_LoginPartial")
+            </div>
+        </div>
+    </div>
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+        </footer>
+    </div>
+
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+
+<script>
+    $(function(){
+        $("#i4goFrame").i4goTrueToken({
+            server: "@ViewBag.Server", // REQUIRED - get this from access.i4go.com call (or access.shift4test.com)
+            accessBlock: "@ViewBag.AccessBlock", // REQUIRED - get this from access.i4go.com call (or access.shift4test.com)
+            self: document.location, // REQUIRED - the full URL used to locate the current page
+            template: "bootstrap3", // the template you want (currently defaults to bootstrap3-horizontal)
+            encryptedOnlySwipe: true,
+            url: "https://i4m.shift4test.com", // i4go server
+            frameContainer: "i4goFrame", // Only used if frameName does not exist
+        frameName: "", // Auto-assigned if left empty
+        frameAutoResize: true, // iframe will expand vertically as needed so content fits
+        submitButton: {
+            label: "submit"
+        }, // The text in quotes will be the text on the button.
+        frameClasses: "",
+        formAutoSubmitOnSuccess: false,
+        formAutoSubmitOnFailure: false,
+
+        onSuccess: function( form,data ){
+            console.log("(i4goTrueToken) onSuccess()",data);
+        },
+        onFailure: function( form,data ){
+            console.warn("(i4goTrueToken) onFailure()",data);
+        },
+        onComplete: function( form,shiftData ) {
+            console.log("(i4goTrueToken) onComplete()", shiftData);
+
+            //Post to our server now.
+            var url = "/home/AuthorizeCard";
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: shiftData,
+                success: function (data) {
+                    if (data.indexOf(",") == -1) {
+                        //Token was authorized successfully!
+                        window.location.href = "/home/success";
+
+                    } else {
+                        //The token wasn't able to be authorized, so stay on the iFrame/CHD entry page.
+
+                    }
+                }
+            });
+        },
+
+        acceptedPayments: "AX,DC,GC,JC,MC,NS,VS",
+
+            // Auto populated form fields. Precedence: field name, field id
+        formPaymentResponse: "i4go_response",
+        formPaymentResponseCode: "i4go_responsecode",
+        formPaymentResponseText: "i4go_responsetext",
+        formPaymentMaskedCard: "i4go_maskedcard",
+        formPaymentToken: "i4go_uniqueid",
+        formPaymentExpMonth: "i4go_expirationmonth",
+        formPaymentExpYear: "i4go_expirationyear",
+        formPaymentType: "i4go_cardtype",
+
+            // Advanced Options
+            payments: [
+                { type: "VS", name: "Visa" },
+                { type: "MC", name: "MasterCard" },
+                { type: "AX", name: "American Express" },
+                { type: "DC", name: "Diners Club" },
+                { type: "NS", name: "Discover" },
+                { type: "JC", name: "JCB" }
+            ],
+            body: { styles:{ "background-color": "##aaa", borderLeft: "5px solid ##ccc" } },
+            label: { classes:"control-label col-xs-4" },
+            container: { classes:"" },
+            cardType: { classes:"", label:"", placeholder:"", message:"", visible:true },
+            // If visible, which is the default setting, it is required.
+            cardNumber: { classes:"", label:"", placeholder:"", message:"" },
+            // Always visible and always required.
+            expirationMonth: { classes:"", label:"", placeholder:"", message:"" },
+            // Always visible and always required.
+            expirationYear: { classes:"", label:"", placeholder:"", message:"" },
+            // Always visible and always required.
+            cvv2Code: { classes:"", label:"", placeholder:"", message:"", visible:true,
+                required:true },
+            // Can be visible or not; if visible, can be required or not. Default settings are visible and required. If not visible, required setting is ignored.
+        cardholderName: { classes:"", label:"", placeholder:"", message:"", visible:true,
+            required:true },
+        // Can be visible or not; if visible, can be required or not. Default setting is not visible, which means required setting is ignored.
+            streetAddress: { classes:"", label:"", placeholder:"", message:"", visible:true,
+            required:true },
+        // Can be visible or not; if visible, can be required or not. Default setting is not visible, which means required setting is ignored.
+            postalCode: { classes:"", label:"", placeholder:"", message:"", visible:true,
+            required:true },
+        // Can be visible or not; if visible, can be required or not. Default setting is not visible, which means required setting is ignored.
+            cssRules: [
+            "body{background-color: ##aaa;font-family:'Trebuchet MS', Arial, Helvetica, sans-serif;}",
+            "body{text-size: ''}",
+            "label{color:##444;font-size:80%;font-weight:bold;}"
+    ],
+
+        // Debug flags: Simply creates additional console log messages
+        // A debugger needs to be running to view. In no event does CHD get logged.
+        debug: false, // Parent side
+        remoteDebug: false // Adds width indicators within the iframe contents to help with frame sizing
+    });
+    });
+</script>
+</body>
+</html>
