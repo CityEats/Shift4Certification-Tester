@@ -50,10 +50,10 @@ namespace Shift4Certification.Controllers
 
         public string AuthorizeCard(Shift4TokenizeResponse request)
         {
-            var date = DateTime.UtcNow.Month.ToString("00") + DateTime.UtcNow.Day.ToString("00") +
-                       DateTime.UtcNow.Year.ToString().Substring(0,2);
-            var time = DateTime.UtcNow.Hour.ToString("00") + DateTime.UtcNow.Minute.ToString("00") +
-                       DateTime.UtcNow.Second.ToString("00");
+            var date = DateTime.Now.Month.ToString("00") + DateTime.Now.Day.ToString("00") +
+                       DateTime.Now.Year.ToString().Substring(2,2);
+            var time = DateTime.Now.Hour.ToString("00") + DateTime.Now.Minute.ToString("00") +
+                       DateTime.Now.Second.ToString("00");
 
             var amount = "1200.00";
 
@@ -76,14 +76,13 @@ namespace Shift4Certification.Controllers
                 + "&Invoice=" + new Random().Next(1000000000,2000000000)
                 + "&Notes=" + HttpUtility.UrlEncode("<p>Reservation made through rGuest Seat</p>") 
                 + "&ProductDescriptor1=" + HttpUtility.UrlEncode("Meal Reservation Pre-Payment at Momofuku") 
-                + "&SaleFlag=C"
-                + "&ReceiptTextColumns=0"
+                + "&ReceiptTextColumns=1"
                 + "&TaxAmount=0"
                 + "&TaxIndicator=N"
                 + "&Verbose=yes&" +
                 "FunctionRequestCode=1D" +
                 "&APIFormat=0" +
-                "&APISignature=$" +
+                "&APISignature=" + HttpUtility.UrlEncode("$") +
                 "&AccessToken=6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE" +
                 "&CONTENTTYPE=" + contentType + 
                 "&Date=" + date + "&Time=" + time
@@ -104,7 +103,7 @@ namespace Shift4Certification.Controllers
 
 
                 //Checking that the tran id is NotFiniteNumberException also zero because that indicates a timeout that doesn't need to be voided
-                if (auth.xmldata.PrimaryErrorCode != "0" && auth.xmldata.TranId != "0")
+                if (auth.xmldata.PrimaryErrorCode != "0") // && auth.xmldata.TranId != "0")
                 {
                     using (WebClient wcB = new WebClient())
                     {
@@ -115,7 +114,7 @@ namespace Shift4Certification.Controllers
                                                   "&Verbose=yes" + 
                                                   "&FunctionRequestCode=08" + 
                                                   "&APIFormat=0" + 
-                                                  "&APISignature=$" + 
+                                                  "&APISignature=" + HttpUtility.UrlEncode("$") +
                                                   "&AccessToken=6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE" +
                                                   "&CONTENTTYPE=XML / text" +
                                                   "&Date=" + date + 
@@ -131,10 +130,30 @@ namespace Shift4Certification.Controllers
                     return "Sorry, no good!" + auth.xmldata.LongError;
                 }
 
+                //If there is a communication error, we need to wait 3 seconds, then issue a status call...
                 if (auth.xmldata.TranId == "0")
                 {
+                    System.Threading.Thread.Sleep(3000);
+                    
+                    using (WebClient wcC = new WebClient())
+                    {
+                        string myStatusParameters = "STX=yes&" +
+                                                    "UniqueId=" + request.i4go_uniqueid +
+                                                    "&FunctionRequestCode=07"
+                                                    + "&APIOptions=" + HttpUtility.UrlEncode("ALLDATA,ENHANCEDRECEIPTS")
+                                                    + "&AccessToken=6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE"
+                                                    + "&Vendor=" + vendorInfo
+                                                    + "&ETX=yes";
+
+                        wcC.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
+                        string voidResult = wcC.UploadString(uri, myStatusParameters);
+
+                    }
+
                     return "Sorry, that transaction didn't go through. Please try again later.";
                 }
+
+                //All good.
                 return "OK";
 
             }
