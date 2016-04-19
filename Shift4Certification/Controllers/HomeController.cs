@@ -103,7 +103,7 @@ namespace Shift4Certification.Controllers
 
 
                 //Checking that the tran id is NotFiniteNumberException also zero because that indicates a timeout that doesn't need to be voided
-                if (auth.xmldata.PrimaryErrorCode != "0") // && auth.xmldata.TranId != "0")
+                if (auth.xmldata.PrimaryErrorCode != "0" && auth.xmldata.TranId != "0")
                 {
                     using (WebClient wcB = new WebClient())
                     {
