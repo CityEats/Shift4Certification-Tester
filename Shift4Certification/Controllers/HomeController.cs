@@ -14,7 +14,7 @@ namespace Shift4Certification.Controllers
         {
 
             var date = DateTime.UtcNow.Month.ToString("00") + DateTime.UtcNow.Day.ToString("00") +
-                       DateTime.UtcNow.Year.ToString("00");
+                       DateTime.UtcNow.Year.ToString("00").Substring(2, 2);
             var time = DateTime.UtcNow.Hour.ToString("00") + DateTime.UtcNow.Minute.ToString("00") +
                        DateTime.UtcNow.Second.ToString("00");
 
@@ -55,7 +55,7 @@ namespace Shift4Certification.Controllers
             var time = DateTime.Now.Hour.ToString("00") + DateTime.Now.Minute.ToString("00") +
                        DateTime.Now.Second.ToString("00");
 
-            var amount = "1200.00";
+            var amount = "111.61";
 
             var customerName = HttpUtility.UrlEncode("Andrew Ford");
             var vendorInfo = HttpUtility.UrlEncode("Agilysys, Inc:rGuest Seat:4.9.4");
@@ -63,20 +63,23 @@ namespace Shift4Certification.Controllers
 
             string uri = "http://192.168.0.17:16448";
 
+            var invoiceNum = new Random().Next(1000000000, 2000000000);
+
             string myParameters = 
                 "STX=yes&UniqueId=" + request.i4go_uniqueid 
                 + "&CustomerName=" + customerName +
                 "&PrimaryAmount=" + amount
                 + "&CardEntryMode=M"
                 + "&CardPresent=N" 
-                + "&CardType=CC" 
+                + "&CardType=CC"
+                + "&SaleFlag=S"
                 + "&Clerk=56000"
                 + "&CustomerReference=" + HttpUtility.UrlEncode(Guid.NewGuid().ToString().Substring(0,12))  
                 + "&DestinationZipCode=43206"
-                + "&Invoice=" + new Random().Next(1000000000,2000000000)
+                + "&Invoice=" + invoiceNum
                 + "&Notes=" + HttpUtility.UrlEncode("<p>Reservation made through rGuest Seat</p>") 
                 + "&ProductDescriptor1=" + HttpUtility.UrlEncode("Meal Reservation Pre-Payment at Momofuku") 
-                + "&ReceiptTextColumns=1"
+                + "&ReceiptTextColumns=999"
                 + "&TaxAmount=0"
                 + "&TaxIndicator=N"
                 + "&Verbose=yes&" +
@@ -103,24 +106,30 @@ namespace Shift4Certification.Controllers
 
 
                 //Checking that the tran id is NotFiniteNumberException also zero because that indicates a timeout that doesn't need to be voided
-                if (auth.xmldata.PrimaryErrorCode != "0" && auth.xmldata.TranId != "0")
+                if ((auth.xmldata.response == "D" | auth.xmldata.response == "X" | auth.xmldata.response == "R" | auth.xmldata.response == "f" | auth.xmldata.PrimaryErrorCode != "0") && auth.xmldata.TranId != "0")
                 {
+                    date = DateTime.Now.Month.ToString("00") + DateTime.Now.Day.ToString("00") +
+                       DateTime.Now.Year.ToString().Substring(2, 2);
+                    time = DateTime.Now.Hour.ToString("00") + DateTime.Now.Minute.ToString("00") +
+                               DateTime.Now.Second.ToString("00");
+
                     using (WebClient wcB = new WebClient())
                     {
                         //Let's void this failed transaction.
                         string myVoidParameters = "STX=yes&" +
-                                                    "UniqueId=" + request.i4go_uniqueid +
-                                                  "&CustomerName=" + customerName + 
+                                                    "UniqueId=" + auth.xmldata.UniqueId +
                                                   "&Verbose=yes" + 
                                                   "&FunctionRequestCode=08" + 
-                                                  "&APIFormat=0" + 
+                                                  "&APIFormat=0" +
+                                                  "&Invoice=" + invoiceNum + 
+                                                  "&ReceiptTextColumns=999" + 
                                                   "&APISignature=" + HttpUtility.UrlEncode("$") +
                                                   "&AccessToken=6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE" +
-                                                  "&CONTENTTYPE=XML / text" +
+                                                  "&CONTENTTYPE=" + HttpUtility.UrlEncode("XML / text") +
                                                   "&Date=" + date + 
                                                   "&Time=" + time + 
                                                   "&APIOptions=ALLDATA" +
-                                                  "&RequestorReference=" + Guid.NewGuid().ToString().Substring(0,12) +
+                                                  "&RequestorReference=" + HttpUtility.UrlEncode(Guid.NewGuid().ToString().Substring(0, 12)) +
                                                   "&Vendor=" + vendorInfo + 
                                                   "&ETX=yes";
 
@@ -134,23 +143,85 @@ namespace Shift4Certification.Controllers
                 if (auth.xmldata.TranId == "0")
                 {
                     System.Threading.Thread.Sleep(3000);
-                    
+
+                    date = DateTime.Now.Month.ToString("00") + DateTime.Now.Day.ToString("00") +
+                       DateTime.Now.Year.ToString().Substring(2, 2);
+                    time = DateTime.Now.Hour.ToString("00") + DateTime.Now.Minute.ToString("00") +
+                               DateTime.Now.Second.ToString("00");
+
                     using (WebClient wcC = new WebClient())
                     {
                         string myStatusParameters = "STX=yes&" +
-                                                    "UniqueId=" + request.i4go_uniqueid +
+                                                    "UniqueId=" + auth.xmldata.UniqueId +
                                                     "&FunctionRequestCode=07"
+                                                    + "&Invoice=" + invoiceNum
+                                                    + "&APIFormat=0" 
+                                                    + "&APISignature=" + HttpUtility.UrlEncode("$") 
+                                                    + "&CONTENTTYPE=" + HttpUtility.UrlEncode("XML / text") 
+                                                    + "&Date=" + date 
+                                                    + "&Time=" + time 
+                                                    + "&ReceiptTextColumns=999" 
+                                                    + "&Verbose=yes" 
+                                                    + "&RequestorReference=" + HttpUtility.UrlEncode(Guid.NewGuid().ToString().Substring(0, 12)) 
                                                     + "&APIOptions=" + HttpUtility.UrlEncode("ALLDATA,ENHANCEDRECEIPTS")
                                                     + "&AccessToken=6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE"
                                                     + "&Vendor=" + vendorInfo
                                                     + "&ETX=yes";
 
                         wcC.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
-                        string voidResult = wcC.UploadString(uri, myStatusParameters);
+                        string statusResult = wcC.UploadString(uri, myStatusParameters);
+
+                        var docB = new XmlDocument();
+                        docB.LoadXml(statusResult);
+                        var jsonB = Newtonsoft.Json.JsonConvert.SerializeXmlNode(docB.LastChild);
+                        var authB = Newtonsoft.Json.JsonConvert.DeserializeObject<Shift4CardAuth>(jsonB);
+
+                        if (authB.xmldata.TranId == "0")
+                        {
+                            //Status didn't return before the global timeout, therefore we need to log the transaction, and alert the merchant.
+                            //*** ALERT MERCHANT VIA EMAIL HERE
+                            return "Sorry, that transaction didn't go through. Please try again later.";
+                        }
+
+                        if (authB.xmldata.response == "A" | authB.xmldata.response == "C")
+                        {
+                            return "OK";
+                        }
+
+                        date = DateTime.Now.Month.ToString("00") + DateTime.Now.Day.ToString("00") +
+                       DateTime.Now.Year.ToString().Substring(2, 2);
+                        time = DateTime.Now.Hour.ToString("00") + DateTime.Now.Minute.ToString("00") +
+                                   DateTime.Now.Second.ToString("00");
+
+                        //Status inidcates that the transaction was not approved but the invoice was found in DOTN, so we need to void it.
+                        using (WebClient wcB = new WebClient())
+                        {
+                            //Let's void this failed transaction.
+                            string myVoidParameters = "STX=yes&" +
+                                                        "UniqueId=" + authB.xmldata.UniqueId +
+                                                      "&CustomerName=" + customerName +
+                                                      "&Verbose=yes" +
+                                                      "&FunctionRequestCode=08" +
+                                                      "&APIFormat=0" +
+                                                      "&Invoice=" + invoiceNum +
+                                                      "&PrimaryAmount=" + amount +
+                                                      "&ReceiptTextColumns=999" +
+                                                      "&APISignature=" + HttpUtility.UrlEncode("$") +
+                                                      "&AccessToken=6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE" +
+                                                      "&CONTENTTYPE=" + HttpUtility.UrlEncode("XML / text") +
+                                                      "&Date=" + date +
+                                                      "&Time=" + time +
+                                                      "&APIOptions=ALLDATA" +
+                                                      "&RequestorReference=" + HttpUtility.UrlEncode(Guid.NewGuid().ToString().Substring(0, 12)) +
+                                                      "&Vendor=" + vendorInfo +
+                                                      "&ETX=yes";
+
+                            wcB.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
+                            string voidResult = wcB.UploadString(uri, myVoidParameters);
+                        }
+                        return "Sorry, that transaction didn't go through. Please try again later.";
 
                     }
-
-                    return "Sorry, that transaction didn't go through. Please try again later.";
                 }
 
                 //All good.
@@ -197,6 +268,11 @@ namespace Shift4Certification.Controllers
             public string TranId { get; set; }
             public string PrimaryErrorCode { get; set; }
             public string LongError { get; set; }
+            public string response { get; set; }
+            public string invoice { get; set; }
+            public string merchantreceipttext { get; set; }
+            public string customerreceipttext { get; set; }
+            public string UniqueId { get; set; }
         }
 
     }
