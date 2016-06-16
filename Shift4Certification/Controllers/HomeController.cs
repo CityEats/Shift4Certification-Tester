@@ -10,8 +10,11 @@ namespace Shift4Certification.Controllers
 {
     public class HomeController : Controller
     {
+        
         public ActionResult Index()
         {
+            var accessToken = "6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE";
+            //accessToken = HttpUtility.UrlEncode("1407566D-A60B-485E-AF02-625C0D441D3B");
 
             var date = DateTime.UtcNow.Month.ToString("00") + DateTime.UtcNow.Day.ToString("00") +
                        DateTime.UtcNow.Year.ToString("00").Substring(2, 2);
@@ -33,8 +36,7 @@ namespace Shift4Certification.Controllers
 
             string URI = "https://access.shift4test.com";
 
-            var accessToken = "6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE";
-            //var accessToken = HttpUtility.UrlEncode("1407566D-A60B-485E-AF02-625C0D441D3B");
+            
 
             string myParameters = "i4go_accessToken=" + accessToken + "&i4go_clientIp=74.135.96.118";
 
@@ -54,6 +56,9 @@ namespace Shift4Certification.Controllers
 
         public string AuthorizeCard(Shift4TokenizeResponse request)
         {
+            var accessToken = "6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE";
+            //accessToken = HttpUtility.UrlEncode("1407566D-A60B-485E-AF02-625C0D441D3B");
+
             var date = DateTime.Now.Month.ToString("00") + DateTime.Now.Day.ToString("00") +
                        DateTime.Now.Year.ToString().Substring(2,2);
             var time = DateTime.Now.Hour.ToString("00") + DateTime.Now.Minute.ToString("00") +
@@ -64,16 +69,16 @@ namespace Shift4Certification.Controllers
             var customerName = HttpUtility.UrlEncode("Andrew Ford");
 
             var vendorInfo = HttpUtility.UrlEncode("Agilysys, Inc:rGuest Seat:4.9.4");
-            //vendorInfo = @"A?6$b&C%d/1=2\4+|://www.shift4.";
+            //vendorInfo = HttpUtility.UrlEncode(@"A?6$b&C%d/1=2\4+|://www.shift4.");
             
-            var customerReference = "HttpUtility.UrlEncode(Guid.NewGuid().ToString().Substring(0,12))";
-            //customerReference = @"A?6$b&C%d/1=2\4+|://www.shift4.";
+            var customerReference = HttpUtility.UrlEncode(Guid.NewGuid().ToString().Substring(0,12));
+            //customerReference = HttpUtility.UrlEncode(@"A?6$b&C%d/1=2\4+|://www.shift4.");
 
-            var productDescriptor = HttpUtility.UrlEncode("Meal Reservation Pre - Payment at Momofuku");
-            //productDescriptor = @"A?6$b&C%d/1=2\4+|://www.shift4.";
+            var productDescriptor = HttpUtility.UrlEncode("Reservation at Momofuku");
+            //productDescriptor = HttpUtility.UrlEncode(@"A?6$b&C%d/1=2\4+|://www.shift4.");
 
             var notes = HttpUtility.UrlEncode("<p>Reservation made through rGuest Seat</p>");
-            notes = @"A?6$b&C%d/1=2\4+|://www.shift4.";
+            notes = HttpUtility.UrlEncode(@"A?6$b&C%d/1=2\4+|://www.shift4.");
 
             var contentType = HttpUtility.UrlEncode("XML / text");
 
@@ -95,7 +100,7 @@ namespace Shift4Certification.Controllers
                 + "&Invoice=" + invoiceNum
                 + "&Notes=" + notes
                 + "&ProductDescriptor1=" + productDescriptor 
-                + "&ReceiptTextColumns=999"
+                + "&ReceiptTextColumns=48"
                 + "&TaxAmount=0"
                 + "&TaxIndicator=N"
                 + "&TokenSerialNumber=266"
@@ -103,7 +108,7 @@ namespace Shift4Certification.Controllers
                 "FunctionRequestCode=1D" +
                 "&APIFormat=0" +
                 "&APISignature=" + HttpUtility.UrlEncode("$") +
-                "&AccessToken=6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE" +
+                "&AccessToken=" + accessToken + 
                 "&CONTENTTYPE=" + contentType + 
                 "&Date=" + date + "&Time=" + time
                 + "&APIOptions=" + HttpUtility.UrlEncode("ALLDATA,ENHANCEDRECEIPTS,RETURNMETATOKEN") 
@@ -125,14 +130,12 @@ namespace Shift4Certification.Controllers
                 //Store the unique ID returned and deserialized into the auth object above. This is used for refunding if needed later.
 
                 //Checking that the tran id is NotFiniteNumberException also zero because that indicates a timeout that doesn't need to be voided
-                if ((auth.xmldata.response == "D" | 
+                if (auth.xmldata.response == "D" | 
                     auth.xmldata.response == "X" | 
                     auth.xmldata.response == "R" | 
                     auth.xmldata.response == "f" | 
-                    auth.xmldata.PrimaryErrorCode != "0" |
                     auth.xmldata.CVV2Valid == "N" |
-                    auth.xmldata.ValidAVS == "N") 
-                    && auth.xmldata.TranId != "0")
+                    auth.xmldata.ValidAVS == "N")
                 {
 
                     if (auth.xmldata.PrimaryErrorCode == "9951" && auth.xmldata.SecondaryErrorCode == "4")
@@ -154,9 +157,9 @@ namespace Shift4Certification.Controllers
                                                   "&FunctionRequestCode=08" + 
                                                   "&APIFormat=0" +
                                                   "&Invoice=" + invoiceNum + 
-                                                  "&ReceiptTextColumns=999" + 
+                                                  "&ReceiptTextColumns=48" + 
                                                   "&APISignature=" + HttpUtility.UrlEncode("$") +
-                                                  "&AccessToken=6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE" +
+                                                  "&AccessToken=" + accessToken +
                                                   "&CONTENTTYPE=" + contentType +
                                                   "&Date=" + date + 
                                                   "&Time=" + time + 
@@ -193,12 +196,12 @@ namespace Shift4Certification.Controllers
                                                     + "&TokenSerialNumber=266"
                                                     + "&Date=" + date 
                                                     + "&Time=" + time 
-                                                    + "&ReceiptTextColumns=999" 
+                                                    + "&ReceiptTextColumns=48" 
                                                     + "&Verbose=yes" 
                                                     + "&RequestorReference=" + HttpUtility.UrlEncode(Guid.NewGuid().ToString().Substring(0, 12))
                                                     + "&MetaTokenType=IL"
                                                     + "&APIOptions=" + HttpUtility.UrlEncode("ALLDATA,ENHANCEDRECEIPTS,RETURNMETATOKEN")
-                                                    + "&AccessToken=6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE"
+                                                    + "&AccessToken=" + accessToken
                                                     + "&Vendor=" + vendorInfo
                                                     + "&ETX=yes";
 
@@ -238,9 +241,9 @@ namespace Shift4Certification.Controllers
                                                       "&FunctionRequestCode=08" +
                                                       "&APIFormat=0" +
                                                       "&Invoice=" + invoiceNum +
-                                                      "&ReceiptTextColumns=999" +
+                                                      "&ReceiptTextColumns=48" +
                                                       "&APISignature=" + HttpUtility.UrlEncode("$") +
-                                                      "&AccessToken=6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE" +
+                                                      "&AccessToken=" + accessToken +
                                                       "&CONTENTTYPE=" + contentType +
                                                       "&Date=" + date +
                                                       "&Time=" + time +
@@ -266,6 +269,9 @@ namespace Shift4Certification.Controllers
 
         public string RefundTransaction(string uniqueId)
         {
+            var accessToken = "6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE";
+            //accessToken = HttpUtility.UrlEncode("1407566D-A60B-485E-AF02-625C0D441D3B");
+
             var date = DateTime.Now.Month.ToString("00") + DateTime.Now.Day.ToString("00") +
                        DateTime.Now.Year.ToString().Substring(2, 2);
             var time = DateTime.Now.Hour.ToString("00") + DateTime.Now.Minute.ToString("00") +
@@ -295,7 +301,7 @@ namespace Shift4Certification.Controllers
                 + "&Invoice=" + invoiceNum
                 + "&Notes=" + HttpUtility.UrlEncode("<p>Reservation made through rGuest Seat</p>")
                 + "&ProductDescriptor1=" + HttpUtility.UrlEncode("Meal Reservation Pre-Payment at Momofuku")
-                + "&ReceiptTextColumns=999"
+                + "&ReceiptTextColumns=48"
                 + "&TaxAmount=0"
                 + "&TaxIndicator=N"
                 + "&TokenSerialNumber=266"
@@ -303,7 +309,7 @@ namespace Shift4Certification.Controllers
                 "FunctionRequestCode=1D" +
                 "&APIFormat=0" +
                 "&APISignature=" + HttpUtility.UrlEncode("$") +
-                "&AccessToken=6050237A%2DBDD7%2D41E2%2DBB40%2D48E3500B94FE" +
+                "&AccessToken=" + accessToken +
                 "&CONTENTTYPE=" + contentType +
                 "&Date=" + date + "&Time=" + time
                 + "&APIOptions=" + HttpUtility.UrlEncode("ALLDATA,ENHANCEDRECEIPTS,RETURNMETATOKEN")
